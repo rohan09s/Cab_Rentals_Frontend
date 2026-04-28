@@ -15,7 +15,7 @@ Vite automatically loads environment files based on the current mode:
 
 ### `VITE_API_URL`
 - **Development**: `http://localhost:5000` (local backend)
-- **Production**: `https://cab-backend-zca0.onrender.com` (deployed backend)
+- **Production**: `https://cab-rentals-be.onrender.com` (deployed backend)
 
 ### `VITE_RAZORPAY_KEY`
 - Razorpay test key (same for both dev and production environments)
