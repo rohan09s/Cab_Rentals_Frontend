@@ -33,7 +33,7 @@ export const cars = [
     category: "Premium 7 Seater",
     models: ["Innova Crysta"],
     image: "https://res.cloudinary.com/dt0mm3yj1/image/upload/q_auto/f_auto/v1776594461/innova-crysta-9-240_qojbd1.jpg",
-    rate: 17,
+    rate: 22,
     seats: "7 Seater",
     type: "premium",
     inclusions: ["Fuel", "Driver", "Car Fare"],
