@@ -74,19 +74,57 @@ export const calculateFare = async (tab, car, state = {}, apiUrl = "") => {
   const faresData = await fetchFaresFromBackend(apiUrl || "http://localhost:5000");
 
   if (tab === "One Way") {
-    const from =
-      state.fromCity?.charAt(0).toUpperCase() +
-      state.fromCity?.slice(1).toLowerCase();
+    // Normalize incoming city names and try to match one-way route keys
+    const normalize = (s = "") =>
+      String(s)
+        .trim()
+        .replace(/\s+/g, " ")
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
 
-    const to =
-      state.toCity?.charAt(0).toUpperCase() +
-      state.toCity?.slice(1).toLowerCase();
+    const from = normalize(state.fromCity);
+    const to = normalize(state.toCity);
 
-    const key = `${from}-${to}`;
-    const route = faresData.oneWayRates?.[key] || {};
+    const exactKey = `${from}-${to}`;
 
-    const fare = Number(route[car.type]);
-    return fare > 0 ? fare : null;
+    const oneWay = faresData.oneWayRates || {};
+
+    // 1) try exact match
+    if (oneWay[exactKey] && oneWay[exactKey][car.type] != null) {
+      const v = Number(oneWay[exactKey][car.type]);
+      return Number.isFinite(v) && v > 0 ? v : null;
+    }
+
+    // 2) try case-insensitive lookup over keys
+    const lowerKey = `${from}-${to}`.toLowerCase();
+    for (const k of Object.keys(oneWay)) {
+      if (k.replace(/\s+/g, " ").toLowerCase() === lowerKey) {
+        const v = Number(oneWay[k]?.[car.type]);
+        return Number.isFinite(v) && v > 0 ? v : null;
+      }
+    }
+
+    // 3) try reverse route (user may have swapped cities)
+    const reverseKey = `${to}-${from}`.toLowerCase();
+    for (const k of Object.keys(oneWay)) {
+      if (k.replace(/\s+/g, " ").toLowerCase() === reverseKey) {
+        const v = Number(oneWay[k]?.[car.type]);
+        return Number.isFinite(v) && v > 0 ? v : null;
+      }
+    }
+
+    // 4) fallback: attempt a loose contains-match (ignore punctuation/spaces)
+    const compact = (s = "") => s.replace(/[^a-z0-9]/gi, "").toLowerCase();
+    const target = compact(`${from}${to}`);
+    for (const k of Object.keys(oneWay)) {
+      if (compact(k).includes(target) || target.includes(compact(k))) {
+        const v = Number(oneWay[k]?.[car.type]);
+        if (Number.isFinite(v) && v > 0) return v;
+      }
+    }
+
+    return null;
   }
 
   if (tab === "Round Trip") {
